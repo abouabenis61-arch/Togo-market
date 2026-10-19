@@ -1,0 +1,99 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TogoMarket — Le marché du Togo</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f8; color: #20252b; }
+    header { background: #087443; color: white; padding: 22px 16px; text-align: center; }
+    header h1 { margin: 0 0 8px; }
+    header p { margin: 0; }
+    main { max-width: 1000px; margin: auto; padding: 18px; }
+    .search, .form, .product { background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    input, select, textarea, button { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #d0d5da; border-radius: 8px; font-size: 16px; }
+    button { background: #087443; color: white; border: 0; font-weight: bold; cursor: pointer; }
+    .products { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 14px; }
+    .product img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; }
+    .price { color: #087443; font-weight: bold; }
+    a { color: #087443; font-weight: bold; }
+    footer { text-align: center; padding: 24px; color: #666; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🛍️ TogoMarket</h1>
+    <p>Tout ce qu'il te faut, au même endroit !</p>
+  </header>
+  <main>
+    <section class="form">
+      <h2>Vendre un produit</h2>
+      <p>Ajoute une photo, le prix et les informations de ton article.</p>
+      <input id="name" placeholder="Nom du produit">
+      <input id="price" type="number" placeholder="Prix en FCFA">
+      <select id="category">
+        <option>Vêtements</option><option>Téléphones</option>
+        <option>Informatique</option><option>Maison</option>
+        <option>Beauté</option><option>Chaussures</option>
+        <option>Électronique</option><option>Autres</option>
+      </select>
+      <input id="photo" type="url" placeholder="Lien de la photo (URL)">
+      <input id="phone" placeholder="Numéro WhatsApp du vendeur (ex. 22890000000)">
+      <textarea id="description" placeholder="Description du produit"></textarea>
+      <button onclick="addProduct()">Ajouter le produit</button>
+      <small>Cette démo conserve les produits dans le navigateur utilisé. Pour les partager entre vendeurs et acheteurs, une base de données sera nécessaire.</small>
+    </section>
+    <section class="search">
+      <h2>Découvrir les produits</h2>
+      <input id="search" placeholder="Rechercher un article..." oninput="render()">
+      <select id="filter" onchange="render()">
+        <option value="">Toutes les catégories</option>
+        <option>Vêtements</option><option>Téléphones</option>
+        <option>Informatique</option><option>Maison</option>
+        <option>Beauté</option><option>Chaussures</option>
+        <option>Électronique</option><option>Autres</option>
+      </select>
+    </section>
+    <section id="products" class="products"></section>
+  </main>
+  <footer>© 2026 TogoMarket — Le marché en ligne du Togo</footer>
+  <script>
+    let products = [];
+    try { products = JSON.parse(localStorage.getItem("togomarket-products") || "[]"); } catch(e) {}
+    function addProduct() {
+      const name = document.getElementById("name").value.trim();
+      const price = document.getElementById("price").value;
+      const category = document.getElementById("category").value;
+      const photo = document.getElementById("photo").value.trim();
+      const phone = document.getElementById("phone").value.replace(/\D/g, "");
+      const description = document.getElementById("description").value.trim();
+      if (!name || !price || !phone) { alert("Remplis le nom, le prix et le numéro WhatsApp."); return; }
+      products.unshift({name, price, category, photo, phone, description});
+      try { localStorage.setItem("togomarket-products", JSON.stringify(products)); } catch(e) {}
+      ["name","price","photo","phone","description"].forEach(id => document.getElementById(id).value = "");
+      render();
+      alert("Produit ajouté sur cet appareil !");
+    }
+    function render() {
+      const q = document.getElementById("search").value.toLowerCase();
+      const category = document.getElementById("filter").value;
+      const filtered = products.filter(p => (p.name + " " + p.description).toLowerCase().includes(q) && (!category || p.category === category));
+      document.getElementById("products").innerHTML = filtered.map(p => `
+        <article class="product">
+          ${p.photo ? `<img src="${p.photo}" alt="">` : ""}
+          <h3>${escapeHtml(p.name)}</h3>
+          <p class="price">${escapeHtml(p.price)} FCFA</p>
+          <p>${escapeHtml(p.category)}</p>
+          <p>${escapeHtml(p.description || "")}</p>
+          <a target="_blank" rel="noopener" href="https://wa.me/${encodeURIComponent(p.phone)}?text=${encodeURIComponent("Bonjour, je suis intéressé par : " + p.name)}">Contacter le vendeur sur WhatsApp</a>
+        </article>`).join("") || "<p>Aucun produit pour le moment.</p>";
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    }
+    render();
+  </script>
+</body>
+</html>
